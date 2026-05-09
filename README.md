@@ -53,8 +53,7 @@ otree devserver
 
 ## Структура проекта
 
-- trust/__init__.py - модели и логика игры
-- trust/pages.py - страницы игры
+- trust/__init__.py - модели и логика игры, страницы игры
 - trust/templates/trust/ - HTML-шаблоны
 - settings.py - настройки oTree
 
