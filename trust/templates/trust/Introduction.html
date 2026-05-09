@@ -1,0 +1,26 @@
+{% extends "global/Page.html" %}
+{% load otree %}
+
+{% block title %}
+    Введение
+{% endblock %}
+
+{% block content %}
+    <div class="card bg-light m-3">
+        <div class="card-body">
+            <h4>Добро пожаловать в игру "Доверие"</h4>
+            <p>Вы будете играть <strong>{{ Constants.num_rounds }}</strong> раундов.</p>
+            <p>В каждом раунде пары случайным образом переформировываются.</p>
+            
+            <h4>Правила игры:</h4>
+            <ul>
+                <li><strong>Игрок 1 (Отправитель)</strong> получает {{ Constants.endowment }} очков</li>
+                <li>Отправитель решает, сколько отправить Игроку 2</li>
+                <li>Отправленная сумма <strong>утраивается</strong> (×{{ Constants.multiplication_factor }})</li>
+                <li><strong>Игрок 2 (Получатель)</strong> получает утроенную сумму</li>
+                <li>Получатель решает, сколько вернуть Отправителю</li>
+            </ul>
+        </div>
+    </div>
+    {% next_button %}
+{% endblock %}

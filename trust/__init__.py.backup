@@ -1,0 +1,122 @@
+from otree.api import *
+import random
+
+doc = """
+Trust Game with group shuffling
+"""
+
+class Constants(BaseConstants):
+    name_in_url = 'trust'
+    players_per_group = 2
+    num_rounds = 5
+    endowment = 100
+    multiplication_factor = 3
+
+class Subsession(BaseSubsession):
+    def creating_session(self):
+        # Перетасовка групп в каждом раунде
+        if self.round_number == 1:
+            self.group_randomly()
+        else:
+            players = self.get_players()
+            random.shuffle(players)
+            groups = [players[i:i+2] for i in range(0, len(players), 2)]
+            for group_id, group_players in enumerate(groups, start=1):
+                group = self.get_group_by_id(group_id)
+                group.set_players(group_players)
+
+class Group(BaseGroup):
+    sent_amount = models.CurrencyField(min=0, max=Constants.endowment)
+    sent_back_amount = models.CurrencyField(min=0)
+
+    def set_payoffs(self):
+        p1 = self.get_player_by_id(1)
+        p2 = self.get_player_by_id(2)
+        p1.payoff = Constants.endowment - self.sent_amount + self.sent_back_amount
+        p2.payoff = self.sent_amount * Constants.multiplication_factor - self.sent_back_amount
+
+class Player(BasePlayer):
+    pass
+
+class Introduction(Page):
+    @staticmethod
+    def is_displayed(player: Player):
+        return player.round_number == 1
+
+class Send(Page):
+    form_model = Group
+    form_fields = ['sent_amount']
+
+    @staticmethod
+    def is_displayed(player: Player):
+        return player.id_in_group == 1
+
+    @staticmethod
+    def vars_for_template(player: Player):
+        return {
+            'round_number': player.round_number,
+            'num_rounds': Constants.num_rounds,
+            'endowment': Constants.endowment,
+        }
+
+class SendBackWaitPage(WaitPage):
+    wait_for_all_groups = False
+
+class SendBack(Page):
+    form_model = Group
+    form_fields = ['sent_back_amount']
+
+    @staticmethod
+    def is_displayed(player: Player):
+        return player.id_in_group == 2
+
+    @staticmethod
+    def vars_for_template(player: Player):
+        group = player.group
+        return {
+            'tripled_amount': group.sent_amount * Constants.multiplication_factor,
+            'sent_amount': group.sent_amount,
+            'round_number': player.round_number,
+            'num_rounds': Constants.num_rounds,
+        }
+
+class ResultsWaitPage(WaitPage):
+    def after_all_players_arrive(self):
+        self.group.set_payoffs()
+
+class Results(Page):
+    @staticmethod
+    def vars_for_template(player: Player):
+        group = player.group
+        return {
+            'current_round_payoff': player.payoff,
+            'total_payoff': player.participant.payoff,
+            'round_number': player.round_number,
+            'num_rounds': Constants.num_rounds,
+            'tripled_amount': group.sent_amount * Constants.multiplication_factor,
+            'sent_amount': group.sent_amount,
+            'sent_back_amount': group.sent_back_amount,
+            'is_sender': player.id_in_group == 1,
+        }
+
+class FinalResults(Page):
+    @staticmethod
+    def is_displayed(player: Player):
+        return player.round_number == Constants.num_rounds
+    
+    @staticmethod
+    def vars_for_template(player: Player):
+        return {
+            'total_payoff': player.participant.payoff,
+            'num_rounds': Constants.num_rounds,
+        }
+
+page_sequence = [
+    Introduction,
+    Send,
+    SendBackWaitPage,
+    SendBack,
+    ResultsWaitPage,
+    Results,
+    FinalResults,
+]
