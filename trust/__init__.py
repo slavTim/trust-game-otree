@@ -16,10 +16,10 @@ class Constants(BaseConstants):
     BOT_RECEIVER_BASE_RATE = 0.35
     BOT_MIN_RETURN = 5
     BOT_MAX_RETURN_RATE = 0.6
-    BOT_LOW_SEND_THRESHOLD = 30
-    BOT_HIGH_SEND_THRESHOLD = 70
-    BOT_GENEROUS_BONUS = 0.2
-    BOT_CONSERVATIVE_PENALTY = 0.1
+    BOT_LOW_SEND_THRESHOLD = 0.3 * endowment
+    BOT_HIGH_SEND_THRESHOLD = 0.7 * endowment
+    BOT_GENEROUS_BONUS = 0.15
+    BOT_CONSERVATIVE_PENALTY = 0.05
 
 
 class Subsession(BaseSubsession):
@@ -69,11 +69,13 @@ class Group(BaseGroup):
         if self.sent_amount < Constants.BOT_LOW_SEND_THRESHOLD:
             return_rate = min(Constants.BOT_RECEIVER_BASE_RATE + Constants.BOT_GENEROUS_BONUS, Constants.BOT_MAX_RETURN_RATE)
         elif self.sent_amount > Constants.BOT_HIGH_SEND_THRESHOLD:
-            return_rate = max(Constants.BOT_RECEIVER_BASE_RATE - Constants.BOT_CONSERVATIVE_PENALTY, 0.20)
+            return_rate = max(Constants.BOT_RECEIVER_BASE_RATE - Constants.BOT_CONSERVATIVE_PENALTY, 0.30)
         else:
             return_rate = Constants.BOT_RECEIVER_BASE_RATE
         
         bot_return = int(received * return_rate)
+        if self.sent_amount < Constants.BOT_HIGH_SEND_THRESHOLD:
+            bot_return = max(bot_return, self.send_amount + 1)
         bot_return = max(bot_return, Constants.BOT_MIN_RETURN)
         bot_return = min(bot_return, received)
         
